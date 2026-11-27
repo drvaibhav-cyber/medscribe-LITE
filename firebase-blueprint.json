@@ -1,0 +1,774 @@
+{
+  "entities": {
+    "DoctorPublicProfile": {
+      "title": "DoctorPublicProfile",
+      "description": "Public clinical profile for a registered doctor without sensitive PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the doctor.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Doctor's full clinical name including Dr. prefix.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "qualification": {
+          "type": "string",
+          "description": "Medical degrees and qualifications (e.g., MBBS, MS, MCh Urology).",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "speciality": {
+          "type": "string",
+          "description": "Clinical speciality (e.g., Consultant Urologist).",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "registrationNo": {
+          "type": "string",
+          "description": "Medical Council Registration Number.",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "hospitalName": {
+          "type": "string",
+          "description": "Primary hospital or clinic name.",
+          "minLength": 2,
+          "maxLength": 150
+        },
+        "department": {
+          "type": "string",
+          "description": "Clinical department.",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the doctor profile was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the doctor profile was last updated."
+        }
+      },
+      "required": [
+        "uid",
+        "fullName",
+        "qualification",
+        "speciality",
+        "registrationNo",
+        "hospitalName",
+        "department",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DoctorPrivateProfile": {
+      "title": "DoctorPrivateProfile",
+      "description": "Isolated private PII profile for a doctor (email, phone, clinic address).",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the doctor.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Doctor's verified email address.",
+          "minLength": 3,
+          "maxLength": 150
+        },
+        "phone": {
+          "type": "string",
+          "description": "Doctor's contact phone number.",
+          "minLength": 5,
+          "maxLength": 30
+        },
+        "clinicAddress": {
+          "type": "string",
+          "description": "Clinic or hospital address.",
+          "minLength": 0,
+          "maxLength": 250
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when private record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when private record was last updated."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "phone",
+        "clinicAddress",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DoctorConsultation": {
+      "title": "DoctorConsultation",
+      "description": "Structured OPD patient consultation record owned by a specific doctor (text, vitals, IPSS, lab/imaging items, and prescriptions).",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique consultation document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning doctor.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorName": {
+          "type": "string",
+          "description": "Full clinical name of the owning doctor.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "department": {
+          "type": "string",
+          "description": "Clinical department of the doctor.",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "opdNo": {
+          "type": "string",
+          "description": "UHID or OPD registration number (empty if not mentioned).",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "date": {
+          "type": "string",
+          "description": "Consultation date in YYYY-MM-DD format.",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "salutation": {
+          "type": "string",
+          "description": "Patient salutation (Mr., Mrs., Ms., etc.).",
+          "minLength": 0,
+          "maxLength": 20
+        },
+        "patientName": {
+          "type": "string",
+          "description": "Patient full name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Patient phone number.",
+          "minLength": 0,
+          "maxLength": 30
+        },
+        "gender": {
+          "type": "string",
+          "description": "Patient gender.",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "age": {
+          "type": "string",
+          "description": "Patient age.",
+          "minLength": 0,
+          "maxLength": 20
+        },
+        "address": {
+          "type": "string",
+          "description": "Patient city or address.",
+          "minLength": 0,
+          "maxLength": 250
+        },
+        "vitals": {
+          "type": "object",
+          "description": "Patient vitals map (bp, pulse, temp, height, weight, bmi, spo2)."
+        },
+        "complaints": {
+          "type": "string",
+          "description": "Chief complaints and presenting symptoms.",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "historyChecklist": {
+          "type": "object",
+          "description": "Urology clinical history checklist map."
+        },
+        "pastMedication": {
+          "type": "string",
+          "description": "Past medications and comorbidities.",
+          "minLength": 0,
+          "maxLength": 1500
+        },
+        "ipss": {
+          "type": "object",
+          "description": "IPSS symptom score map."
+        },
+        "systemicExamination": {
+          "type": "string",
+          "description": "Systemic and abdominal examination notes.",
+          "minLength": 0,
+          "maxLength": 1500
+        },
+        "genitalExamination": {
+          "type": "string",
+          "description": "Local/genital examination notes.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "perRectalExam": {
+          "type": "string",
+          "description": "Per rectal / DRE examination notes.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "labTestsAndImaging": {
+          "type": "string",
+          "description": "Formatted summary of reported lab tests and imaging.",
+          "minLength": 0,
+          "maxLength": 4000
+        },
+        "investigationRecords": {
+          "type": "array",
+          "description": "Bounded array (max 50) of structured date-wise lab and imaging items."
+        },
+        "diagnosis": {
+          "type": "string",
+          "description": "Clinical diagnosis.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "testsRequested": {
+          "type": "string",
+          "description": "Advised investigations for follow-up.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "testsRequestedByWhen": {
+          "type": "string",
+          "description": "When requested tests should be performed.",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "prescriptions": {
+          "type": "array",
+          "description": "Bounded array (max 30) of prescribed medications."
+        },
+        "dietAndExercise": {
+          "type": "string",
+          "description": "Diet and lifestyle instructions.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "admissionAdvice": {
+          "type": "string",
+          "description": "Whether hospital admission is advised.",
+          "minLength": 0,
+          "maxLength": 40
+        },
+        "assessmentPlan": {
+          "type": "string",
+          "description": "Clinical assessment and management plan.",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "advice": {
+          "type": "string",
+          "description": "General advice given to the patient.",
+          "minLength": 0,
+          "maxLength": 2000
+        },
+        "nextVisit": {
+          "type": "string",
+          "description": "Follow-up schedule or date.",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "referredTo": {
+          "type": "object",
+          "description": "Referral doctor and speciality details map."
+        },
+        "otNotes": {
+          "type": "object",
+          "description": "Structured Operation Theatre (OT) and freelance surgery notes map."
+        },
+        "clientCreatedAt": {
+          "type": "integer",
+          "description": "Client creation epoch timestamp in milliseconds for ordering."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when consultation was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when consultation was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "doctorId",
+        "doctorName",
+        "department",
+        "opdNo",
+        "date",
+        "salutation",
+        "patientName",
+        "phoneNumber",
+        "gender",
+        "age",
+        "address",
+        "vitals",
+        "complaints",
+        "historyChecklist",
+        "pastMedication",
+        "ipss",
+        "systemicExamination",
+        "genitalExamination",
+        "perRectalExam",
+        "labTestsAndImaging",
+        "investigationRecords",
+        "diagnosis",
+        "testsRequested",
+        "testsRequestedByWhen",
+        "prescriptions",
+        "dietAndExercise",
+        "admissionAdvice",
+        "assessmentPlan",
+        "advice",
+        "nextVisit",
+        "referredTo",
+        "clientCreatedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DoctorIpdPatient": {
+      "title": "DoctorIpdPatient",
+      "description": "In-Patient Department (IPD) record owned by a specific doctor containing daily progress notes, inpatient medication orders and MAR logs, investigations, OT notes, surgical protocol progress, and discharge summary.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique IPD patient document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning doctor.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorName": {
+          "type": "string",
+          "description": "Full clinical name of the owning doctor.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "department": {
+          "type": "string",
+          "description": "Clinical department.",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "hospitalName": {
+          "type": "string",
+          "description": "Hospital name.",
+          "minLength": 0,
+          "maxLength": 150
+        },
+        "ipdNo": {
+          "type": "string",
+          "description": "IPD admission number.",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "uhid": {
+          "type": "string",
+          "description": "UHID or OPD registration number.",
+          "minLength": 0,
+          "maxLength": 60
+        },
+        "salutation": {
+          "type": "string",
+          "description": "Patient salutation.",
+          "minLength": 0,
+          "maxLength": 20
+        },
+        "patientName": {
+          "type": "string",
+          "description": "Patient full name.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "age": {
+          "type": "string",
+          "description": "Patient age.",
+          "minLength": 0,
+          "maxLength": 20
+        },
+        "gender": {
+          "type": "string",
+          "description": "Patient gender.",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "Patient contact number.",
+          "minLength": 0,
+          "maxLength": 30
+        },
+        "address": {
+          "type": "string",
+          "description": "Patient address.",
+          "minLength": 0,
+          "maxLength": 250
+        },
+        "wardOrBed": {
+          "type": "string",
+          "description": "Ward and bed identifier.",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "admissionDate": {
+          "type": "string",
+          "description": "Admission date (YYYY-MM-DD).",
+          "minLength": 4,
+          "maxLength": 20
+        },
+        "surgeryDate": {
+          "type": "string",
+          "description": "Surgery date (YYYY-MM-DD) for POD calculation.",
+          "minLength": 0,
+          "maxLength": 20
+        },
+        "dischargeDate": {
+          "type": "string",
+          "description": "Discharge date (YYYY-MM-DD).",
+          "minLength": 0,
+          "maxLength": 20
+        },
+        "status": {
+          "type": "string",
+          "enum": ["admitted", "discharged"],
+          "description": "Inpatient admission status.",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "admittingDiagnosis": {
+          "type": "string",
+          "description": "Primary admitting diagnosis.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "clinicalSummary": {
+          "type": "string",
+          "description": "Admission clinical summary and presenting history.",
+          "minLength": 0,
+          "maxLength": 3000
+        },
+        "comorbidities": {
+          "type": "string",
+          "description": "Comorbidities and past history.",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "allergies": {
+          "type": "string",
+          "description": "Known drug allergies.",
+          "minLength": 0,
+          "maxLength": 500
+        },
+        "attendingConsultant": {
+          "type": "string",
+          "description": "Attending consultant name.",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "dailyNotes": {
+          "type": "array",
+          "description": "Bounded array (max 60) of daily clinical progress notes with vitals and SOAP entries."
+        },
+        "medications": {
+          "type": "array",
+          "description": "Bounded array (max 40) of inpatient medication orders."
+        },
+        "medicationLogs": {
+          "type": "array",
+          "description": "Bounded array (max 150) of medication administration log entries."
+        },
+        "labTestsAndImaging": {
+          "type": "string",
+          "description": "Formatted lab and imaging summary.",
+          "minLength": 0,
+          "maxLength": 4000
+        },
+        "investigationRecords": {
+          "type": "array",
+          "description": "Bounded array (max 50) of structured date-wise lab and imaging records."
+        },
+        "otNotes": {
+          "type": "object",
+          "description": "Primary Operation Theatre notes map."
+        },
+        "otProcedures": {
+          "type": "array",
+          "description": "Bounded array (max 10) of OT procedures."
+        },
+        "surgicalProtocol": {
+          "type": "object",
+          "description": "Post-operative surgical protocol tracking map (checklist IDs and protocol fields)."
+        },
+        "dischargeMedications": {
+          "type": "array",
+          "description": "Optional curated discharge prescription items (max 30) synced with the Discharge Summary."
+        },
+        "dischargeSummary": {
+          "type": "object",
+          "description": "Compiled discharge summary document map including diagnosis, chronological procedures, presenting history, examination on IPD, investigations, course in ward, OT notes summary, treatment given in ward table, discharge condition, discharge medications, advice, warnings, stent/HPE plan, and follow-up."
+        },
+        "linkedOpdConsultationId": {
+          "type": "string",
+          "description": "Optional linked OPD consultation document ID.",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "clientCreatedAt": {
+          "type": "integer",
+          "description": "Client creation epoch timestamp in milliseconds."
+        },
+        "clientUpdatedAt": {
+          "type": "integer",
+          "description": "Client update epoch timestamp in milliseconds for offline sync conflict resolution."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when IPD record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when IPD record was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "doctorId",
+        "doctorName",
+        "department",
+        "hospitalName",
+        "ipdNo",
+        "uhid",
+        "salutation",
+        "patientName",
+        "age",
+        "gender",
+        "phoneNumber",
+        "address",
+        "wardOrBed",
+        "admissionDate",
+        "surgeryDate",
+        "dischargeDate",
+        "status",
+        "admittingDiagnosis",
+        "clinicalSummary",
+        "comorbidities",
+        "allergies",
+        "attendingConsultant",
+        "dailyNotes",
+        "medications",
+        "medicationLogs",
+        "labTestsAndImaging",
+        "investigationRecords",
+        "linkedOpdConsultationId",
+        "clientCreatedAt",
+        "clientUpdatedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DoctorSurgicalProtocol": {
+      "title": "DoctorSurgicalProtocol",
+      "description": "Custom itemized postoperative surgical protocol template uploaded from PDF/photo or authored by a specific doctor.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique custom surgical protocol ID.",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owning doctor.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full protocol pathway name.",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "shortName": {
+          "type": "string",
+          "description": "Short heading label used in Daily Clinical Notes.",
+          "minLength": 1,
+          "maxLength": 48
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "One-line scope description.",
+          "minLength": 0,
+          "maxLength": 220
+        },
+        "expectedStayDays": {
+          "type": "string",
+          "description": "Expected stay or discharge target.",
+          "minLength": 0,
+          "maxLength": 80
+        },
+        "urgentEscalationText": {
+          "type": "string",
+          "description": "Urgent clinical review and emergency escalation criteria.",
+          "minLength": 0,
+          "maxLength": 1500
+        },
+        "defaultDischargeAdvice": {
+          "type": "string",
+          "description": "Default post-discharge care advice.",
+          "minLength": 0,
+          "maxLength": 1500
+        },
+        "defaultReturnWarnings": {
+          "type": "string",
+          "description": "Default emergency return warnings.",
+          "minLength": 0,
+          "maxLength": 1500
+        },
+        "sourceFileName": {
+          "type": "string",
+          "description": "Original uploaded PDF or image filename(s).",
+          "minLength": 0,
+          "maxLength": 180
+        },
+        "pdfUrl": {
+          "type": "string",
+          "description": "Optional URL path to the original reference PDF document.",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "sourceAssets": {
+          "type": "array",
+          "description": "Optional bounded array (0..10) of original PDF or image references."
+        },
+        "stages": {
+          "type": "array",
+          "description": "Bounded array (1..24) of structured postoperative stages with fields and checklist items."
+        },
+        "isCustom": {
+          "type": "boolean",
+          "description": "Marks this template as doctor-created/custom."
+        },
+        "clientCreatedAt": {
+          "type": "integer",
+          "description": "Client creation epoch timestamp in milliseconds."
+        },
+        "clientUpdatedAt": {
+          "type": "integer",
+          "description": "Client update epoch timestamp in milliseconds."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when custom protocol was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when custom protocol was last updated."
+        }
+      },
+      "required": [
+        "id",
+        "doctorId",
+        "name",
+        "shortName",
+        "subtitle",
+        "expectedStayDays",
+        "urgentEscalationText",
+        "defaultDischargeAdvice",
+        "defaultReturnWarnings",
+        "sourceFileName",
+        "stages",
+        "isCustom",
+        "clientCreatedAt",
+        "clientUpdatedAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/doctors/{doctorId}": {
+      "schema": {
+        "$ref": "#/entities/DoctorPublicProfile"
+      },
+      "description": "Stores the doctor's clinical profile keyed by Firebase Auth UID."
+    },
+    "/doctors/{doctorId}/private/{docId}": {
+      "schema": {
+        "$ref": "#/entities/DoctorPrivateProfile"
+      },
+      "description": "Stores isolated PII (email, phone, address) for the doctor, restricted strictly to the owner."
+    },
+    "/doctors/{doctorId}/consultations/{consultationId}": {
+      "schema": {
+        "$ref": "#/entities/DoctorConsultation"
+      },
+      "description": "Stores structured OPD patient consultations belonging exclusively to the authenticated doctor."
+    },
+    "/doctors/{doctorId}/ipdPatients/{ipdPatientId}": {
+      "schema": {
+        "$ref": "#/entities/DoctorIpdPatient"
+      },
+      "description": "Stores IPD inpatient progress, medication logs, investigations, OT notes, surgical protocol progress, and discharge summaries belonging exclusively to the authenticated doctor."
+    },
+    "/doctors/{doctorId}/surgicalProtocols/{protocolId}": {
+      "schema": {
+        "$ref": "#/entities/DoctorSurgicalProtocol"
+      },
+      "description": "Stores custom surgical protocol templates itemized from PDF/photo uploads or created by the authenticated doctor."
+    }
+  }
+}

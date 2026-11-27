@@ -1,0 +1,1255 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Pillar 2: Validation Blueprints (Anti-Update-Gap)
+    function isValidDoctorPublicProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'fullName',
+          'qualification',
+          'speciality',
+          'registrationNo',
+          'hospitalName',
+          'department',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'fullName',
+          'qualification',
+          'speciality',
+          'registrationNo',
+          'hospitalName',
+          'department',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid is string &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.fullName is string &&
+        data.fullName.size() >= 2 &&
+        data.fullName.size() <= 100 &&
+        data.qualification is string &&
+        data.qualification.size() >= 1 &&
+        data.qualification.size() <= 120 &&
+        data.speciality is string &&
+        data.speciality.size() >= 2 &&
+        data.speciality.size() <= 100 &&
+        data.registrationNo is string &&
+        data.registrationNo.size() >= 2 &&
+        data.registrationNo.size() <= 60 &&
+        data.hospitalName is string &&
+        data.hospitalName.size() >= 2 &&
+        data.hospitalName.size() <= 150 &&
+        data.department is string &&
+        data.department.size() >= 2 &&
+        data.department.size() <= 100 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidDoctorPrivateProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'email',
+          'phone',
+          'clinicAddress',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid',
+          'email',
+          'phone',
+          'clinicAddress',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.uid is string &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.uid == request.auth.uid &&
+        data.email is string &&
+        data.email.size() >= 3 &&
+        data.email.size() <= 150 &&
+        data.phone is string &&
+        data.phone.size() >= 5 &&
+        data.phone.size() <= 30 &&
+        data.clinicAddress is string &&
+        data.clinicAddress.size() >= 0 &&
+        data.clinicAddress.size() <= 250 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidVitalsMap(v) {
+      return v is map &&
+        v.keys().hasAll(['bp', 'pulse', 'temp', 'height', 'weight', 'bmi', 'spo2']) &&
+        v.keys().hasOnly(['bp', 'pulse', 'temp', 'height', 'weight', 'bmi', 'spo2']) &&
+        v.bp is string && v.bp.size() <= 40 &&
+        v.pulse is string && v.pulse.size() <= 40 &&
+        v.temp is string && v.temp.size() <= 40 &&
+        v.height is string && v.height.size() <= 40 &&
+        v.weight is string && v.weight.size() <= 40 &&
+        v.bmi is string && v.bmi.size() <= 40 &&
+        v.spo2 is string && v.spo2.size() <= 40;
+    }
+
+    function isValidHistoryChecklistMap(h) {
+      return h is map &&
+        h.keys().hasAll([
+          'burning',
+          'fever',
+          'hematuria',
+          'previousRenalCalculi',
+          'previousSurgery',
+          'constipation'
+        ]) &&
+        h.keys().hasOnly([
+          'burning',
+          'fever',
+          'hematuria',
+          'previousRenalCalculi',
+          'previousSurgery',
+          'constipation'
+        ]) &&
+        h.burning is string && h.burning.size() <= 60 &&
+        h.fever is string && h.fever.size() <= 60 &&
+        h.hematuria is string && h.hematuria.size() <= 60 &&
+        h.previousRenalCalculi is string && h.previousRenalCalculi.size() <= 60 &&
+        h.previousSurgery is string && h.previousSurgery.size() <= 60 &&
+        h.constipation is string && h.constipation.size() <= 60;
+    }
+
+    function isValidIpssMap(ip) {
+      return ip is map &&
+        ip.keys().hasAll([
+          'frequency',
+          'urgency',
+          'nocturia',
+          'poorFlow',
+          'intermittency',
+          'straining',
+          'incompleteEvacuation',
+          'qualityOfLife',
+          'scoreTotal'
+        ]) &&
+        ip.keys().hasOnly([
+          'frequency',
+          'urgency',
+          'nocturia',
+          'poorFlow',
+          'intermittency',
+          'straining',
+          'incompleteEvacuation',
+          'qualityOfLife',
+          'scoreTotal'
+        ]) &&
+        ip.frequency is string && ip.frequency.size() <= 60 &&
+        ip.urgency is string && ip.urgency.size() <= 60 &&
+        ip.nocturia is string && ip.nocturia.size() <= 60 &&
+        ip.poorFlow is string && ip.poorFlow.size() <= 60 &&
+        ip.intermittency is string && ip.intermittency.size() <= 60 &&
+        ip.straining is string && ip.straining.size() <= 60 &&
+        ip.incompleteEvacuation is string && ip.incompleteEvacuation.size() <= 60 &&
+        ip.qualityOfLife is string && ip.qualityOfLife.size() <= 60 &&
+        ip.scoreTotal is string && ip.scoreTotal.size() <= 60;
+    }
+
+    function isValidReferredToMap(ref) {
+      return ref is map &&
+        ref.keys().hasAll(['doctorName', 'speciality', 'phoneNo', 'email']) &&
+        ref.keys().hasOnly(['doctorName', 'speciality', 'phoneNo', 'email']) &&
+        ref.doctorName is string && ref.doctorName.size() <= 150 &&
+        ref.speciality is string && ref.speciality.size() <= 150 &&
+        ref.phoneNo is string && ref.phoneNo.size() <= 40 &&
+        ref.email is string && ref.email.size() <= 150;
+    }
+
+    function isValidOtNotesMap(ot) {
+      return ot is map &&
+        ot.keys().hasAll([
+          'surgeryDate',
+          'surgeryTime',
+          'hospitalName',
+          'procedureName',
+          'preOpDiagnosis',
+          'postOpDiagnosis',
+          'surgeonName',
+          'assistantName',
+          'anaesthetistName',
+          'anaesthesiaType',
+          'patientPosition',
+          'operativeFindings',
+          'operativeSteps',
+          'intraOpComplications',
+          'estimatedBloodLoss',
+          'catheterOrStentDetails',
+          'drainDetails',
+          'specimenSent',
+          'postOpOrders',
+          'implantsOrConsumables',
+          'freelanceNotes'
+        ]) &&
+        ot.keys().hasOnly([
+          'id',
+          'surgeryDate',
+          'surgeryTime',
+          'hospitalName',
+          'procedureName',
+          'preOpDiagnosis',
+          'postOpDiagnosis',
+          'surgeonName',
+          'assistantName',
+          'anaesthetistName',
+          'anaesthesiaType',
+          'patientPosition',
+          'operativeFindings',
+          'operativeSteps',
+          'intraOpComplications',
+          'estimatedBloodLoss',
+          'catheterOrStentDetails',
+          'drainDetails',
+          'specimenSent',
+          'postOpOrders',
+          'implantsOrConsumables',
+          'freelanceNotes',
+          'handDrawnDiagrams'
+        ]) &&
+        (!('id' in ot) || (ot.id is string && ot.id.size() <= 100)) &&
+        ot.surgeryDate is string && ot.surgeryDate.size() <= 20 &&
+        ot.surgeryTime is string && ot.surgeryTime.size() <= 40 &&
+        ot.hospitalName is string && ot.hospitalName.size() <= 150 &&
+        ot.procedureName is string && ot.procedureName.size() <= 500 &&
+        ot.preOpDiagnosis is string && ot.preOpDiagnosis.size() <= 500 &&
+        ot.postOpDiagnosis is string && ot.postOpDiagnosis.size() <= 500 &&
+        ot.surgeonName is string && ot.surgeonName.size() <= 120 &&
+        ot.assistantName is string && ot.assistantName.size() <= 120 &&
+        ot.anaesthetistName is string && ot.anaesthetistName.size() <= 120 &&
+        ot.anaesthesiaType is string && ot.anaesthesiaType.size() <= 100 &&
+        ot.patientPosition is string && ot.patientPosition.size() <= 100 &&
+        ot.operativeFindings is string && ot.operativeFindings.size() <= 3000 &&
+        ot.operativeSteps is string && ot.operativeSteps.size() <= 4000 &&
+        ot.intraOpComplications is string && ot.intraOpComplications.size() <= 1000 &&
+        ot.estimatedBloodLoss is string && ot.estimatedBloodLoss.size() <= 100 &&
+        ot.catheterOrStentDetails is string && ot.catheterOrStentDetails.size() <= 500 &&
+        ot.drainDetails is string && ot.drainDetails.size() <= 300 &&
+        ot.specimenSent is string && ot.specimenSent.size() <= 500 &&
+        ot.postOpOrders is string && ot.postOpOrders.size() <= 2000 &&
+        ot.implantsOrConsumables is string && ot.implantsOrConsumables.size() <= 500 &&
+        ot.freelanceNotes is string && ot.freelanceNotes.size() <= 500 &&
+        (
+          !('handDrawnDiagrams' in ot) ||
+          (
+            ot.handDrawnDiagrams is list &&
+            ot.handDrawnDiagrams.size() <= 4 &&
+            (
+              ot.handDrawnDiagrams.size() == 0 ||
+              (ot.handDrawnDiagrams[0] is string && ot.handDrawnDiagrams[0].size() <= 45000)
+            )
+          )
+        );
+    }
+
+    function isValidInvestigationRecordsList(listVal) {
+      return listVal is list &&
+        listVal.size() <= 50 &&
+        (
+          listVal.size() == 0 ||
+          (
+            listVal[0] is map &&
+            listVal[0].keys().hasAll([
+              'id',
+              'reportDate',
+              'displayDate',
+              'category',
+              'panelOrStudy',
+              'parameterName',
+              'valueOrImpression',
+              'flag'
+            ]) &&
+            listVal[0].keys().hasOnly([
+              'id',
+              'reportDate',
+              'displayDate',
+              'category',
+              'panelOrStudy',
+              'parameterName',
+              'valueOrImpression',
+              'flag'
+            ]) &&
+            listVal[0].parameterName is string &&
+            listVal[0].parameterName.size() <= 150 &&
+            listVal[0].valueOrImpression is string &&
+            listVal[0].valueOrImpression.size() <= 1000
+          )
+        );
+    }
+
+    function isValidPrescriptionsList(listVal) {
+      return listVal is list &&
+        listVal.size() <= 30 &&
+        (
+          listVal.size() == 0 ||
+          (
+            listVal[0] is map &&
+            listVal[0].keys().hasAll([
+              'medicine',
+              'dosage',
+              'when',
+              'frequency',
+              'duration',
+              'notes'
+            ]) &&
+            listVal[0].keys().hasOnly([
+              'medicine',
+              'dosage',
+              'when',
+              'frequency',
+              'duration',
+              'notes'
+            ]) &&
+            listVal[0].medicine is string &&
+            listVal[0].medicine.size() <= 150 &&
+            listVal[0].dosage is string &&
+            listVal[0].dosage.size() <= 80
+          )
+        );
+    }
+
+    function isValidDoctorConsultation(data) {
+      return data.keys().hasAll([
+          'id',
+          'doctorId',
+          'doctorName',
+          'department',
+          'opdNo',
+          'date',
+          'salutation',
+          'patientName',
+          'phoneNumber',
+          'gender',
+          'age',
+          'address',
+          'vitals',
+          'complaints',
+          'historyChecklist',
+          'pastMedication',
+          'ipss',
+          'systemicExamination',
+          'genitalExamination',
+          'perRectalExam',
+          'labTestsAndImaging',
+          'investigationRecords',
+          'diagnosis',
+          'testsRequested',
+          'testsRequestedByWhen',
+          'prescriptions',
+          'dietAndExercise',
+          'admissionAdvice',
+          'assessmentPlan',
+          'advice',
+          'nextVisit',
+          'referredTo',
+          'clientCreatedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'doctorId',
+          'doctorName',
+          'department',
+          'opdNo',
+          'date',
+          'salutation',
+          'patientName',
+          'phoneNumber',
+          'gender',
+          'age',
+          'address',
+          'vitals',
+          'complaints',
+          'historyChecklist',
+          'pastMedication',
+          'ipss',
+          'systemicExamination',
+          'genitalExamination',
+          'perRectalExam',
+          'labTestsAndImaging',
+          'investigationRecords',
+          'diagnosis',
+          'testsRequested',
+          'testsRequestedByWhen',
+          'prescriptions',
+          'dietAndExercise',
+          'admissionAdvice',
+          'assessmentPlan',
+          'advice',
+          'nextVisit',
+          'referredTo',
+          'otNotes',
+          'clientCreatedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string &&
+        data.id.size() >= 1 &&
+        data.id.size() <= 128 &&
+        data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.doctorId is string &&
+        data.doctorId.size() >= 1 &&
+        data.doctorId.size() <= 128 &&
+        data.doctorId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.doctorId == request.auth.uid &&
+        data.doctorName is string &&
+        data.doctorName.size() >= 1 &&
+        data.doctorName.size() <= 100 &&
+        data.department is string &&
+        data.department.size() >= 0 &&
+        data.department.size() <= 100 &&
+        data.opdNo is string &&
+        data.opdNo.size() >= 0 &&
+        data.opdNo.size() <= 60 &&
+        data.date is string &&
+        data.date.size() >= 4 &&
+        data.date.size() <= 20 &&
+        data.salutation is string &&
+        data.salutation.size() >= 0 &&
+        data.salutation.size() <= 20 &&
+        data.patientName is string &&
+        data.patientName.size() >= 1 &&
+        data.patientName.size() <= 120 &&
+        data.phoneNumber is string &&
+        data.phoneNumber.size() >= 0 &&
+        data.phoneNumber.size() <= 30 &&
+        data.gender is string &&
+        data.gender.size() >= 1 &&
+        data.gender.size() <= 20 &&
+        data.age is string &&
+        data.age.size() >= 0 &&
+        data.age.size() <= 20 &&
+        data.address is string &&
+        data.address.size() >= 0 &&
+        data.address.size() <= 250 &&
+        isValidVitalsMap(data.vitals) &&
+        data.complaints is string &&
+        data.complaints.size() >= 0 &&
+        data.complaints.size() <= 2000 &&
+        isValidHistoryChecklistMap(data.historyChecklist) &&
+        data.pastMedication is string &&
+        data.pastMedication.size() >= 0 &&
+        data.pastMedication.size() <= 1500 &&
+        isValidIpssMap(data.ipss) &&
+        data.systemicExamination is string &&
+        data.systemicExamination.size() >= 0 &&
+        data.systemicExamination.size() <= 1500 &&
+        data.genitalExamination is string &&
+        data.genitalExamination.size() >= 0 &&
+        data.genitalExamination.size() <= 1000 &&
+        data.perRectalExam is string &&
+        data.perRectalExam.size() >= 0 &&
+        data.perRectalExam.size() <= 1000 &&
+        data.labTestsAndImaging is string &&
+        data.labTestsAndImaging.size() >= 0 &&
+        data.labTestsAndImaging.size() <= 4000 &&
+        isValidInvestigationRecordsList(data.investigationRecords) &&
+        data.diagnosis is string &&
+        data.diagnosis.size() >= 0 &&
+        data.diagnosis.size() <= 1000 &&
+        data.testsRequested is string &&
+        data.testsRequested.size() >= 0 &&
+        data.testsRequested.size() <= 1000 &&
+        data.testsRequestedByWhen is string &&
+        data.testsRequestedByWhen.size() >= 0 &&
+        data.testsRequestedByWhen.size() <= 100 &&
+        isValidPrescriptionsList(data.prescriptions) &&
+        data.dietAndExercise is string &&
+        data.dietAndExercise.size() >= 0 &&
+        data.dietAndExercise.size() <= 1000 &&
+        data.admissionAdvice is string &&
+        data.admissionAdvice.size() >= 0 &&
+        data.admissionAdvice.size() <= 40 &&
+        data.assessmentPlan is string &&
+        data.assessmentPlan.size() >= 0 &&
+        data.assessmentPlan.size() <= 2000 &&
+        data.advice is string &&
+        data.advice.size() >= 0 &&
+        data.advice.size() <= 2000 &&
+        data.nextVisit is string &&
+        data.nextVisit.size() >= 0 &&
+        data.nextVisit.size() <= 200 &&
+        isValidReferredToMap(data.referredTo) &&
+        (!('otNotes' in data) || isValidOtNotesMap(data.otNotes)) &&
+        data.clientCreatedAt is int &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidIpdDailyNotesList(listVal) {
+      return listVal is list &&
+        listVal.size() <= 60 &&
+        (
+          listVal.size() == 0 ||
+          (
+            listVal[0] is map &&
+            listVal[0].keys().hasAll([
+              'id',
+              'date',
+              'time',
+              'podLabel',
+              'vitals',
+              'subjective',
+              'objective',
+              'assessmentPlan',
+              'authorName',
+              'createdAt'
+            ]) &&
+            listVal[0].keys().hasOnly([
+              'id',
+              'date',
+              'time',
+              'podLabel',
+              'vitals',
+              'subjective',
+              'objective',
+              'assessmentPlan',
+              'authorName',
+              'createdAt'
+            ]) &&
+            listVal[0].id is string && listVal[0].id.size() <= 80 &&
+            listVal[0].date is string && listVal[0].date.size() <= 20 &&
+            listVal[0].subjective is string && listVal[0].subjective.size() <= 2000 &&
+            listVal[0].objective is string && listVal[0].objective.size() <= 2000 &&
+            listVal[0].assessmentPlan is string && listVal[0].assessmentPlan.size() <= 2000
+          )
+        );
+    }
+
+    function isValidIpdMedicationsList(listVal) {
+      return listVal is list &&
+        listVal.size() <= 40 &&
+        (
+          listVal.size() == 0 ||
+          (
+            listVal[0] is map &&
+            listVal[0].keys().hasAll([
+              'id',
+              'medicine',
+              'dosage',
+              'route',
+              'frequency',
+              'when',
+              'startDate',
+              'stopDate',
+              'status',
+              'notes'
+            ]) &&
+            listVal[0].keys().hasOnly([
+              'id',
+              'medicine',
+              'dosage',
+              'route',
+              'frequency',
+              'when',
+              'startDate',
+              'stopDate',
+              'status',
+              'notes'
+            ]) &&
+            listVal[0].medicine is string && listVal[0].medicine.size() <= 150 &&
+            listVal[0].dosage is string && listVal[0].dosage.size() <= 80 &&
+            listVal[0].status in ['active', 'held', 'stopped']
+          )
+        );
+    }
+
+    function isValidIpdMedicationLogsList(listVal) {
+      return listVal is list &&
+        listVal.size() <= 150 &&
+        (
+          listVal.size() == 0 ||
+          (
+            listVal[0] is map &&
+            listVal[0].keys().hasAll([
+              'id',
+              'medicationId',
+              'medicineName',
+              'dosage',
+              'route',
+              'date',
+              'timeSlot',
+              'status',
+              'givenBy',
+              'remarks',
+              'loggedAt'
+            ]) &&
+            listVal[0].keys().hasOnly([
+              'id',
+              'medicationId',
+              'medicineName',
+              'dosage',
+              'route',
+              'date',
+              'timeSlot',
+              'status',
+              'givenBy',
+              'remarks',
+              'loggedAt'
+            ]) &&
+            listVal[0].medicineName is string && listVal[0].medicineName.size() <= 150 &&
+            listVal[0].status in ['given', 'held', 'missed']
+          )
+        );
+    }
+
+    function isValidIpdOtProceduresList(listVal) {
+      return listVal is list &&
+        listVal.size() <= 10 &&
+        (
+          listVal.size() == 0 ||
+          isValidOtNotesMap(listVal[0])
+        );
+    }
+
+    function isValidIpdSurgicalProtocolMap(proto) {
+      return proto is map &&
+        proto.keys().hasAll([
+          'protocolId',
+          'surgeryDate',
+          'checkedItemIds',
+          'fieldValues',
+          'deviationsNote',
+          'startedAt',
+          'updatedAt'
+        ]) &&
+        proto.keys().hasOnly([
+          'protocolId',
+          'surgeryDate',
+          'checkedItemIds',
+          'fieldValues',
+          'deviationsNote',
+          'startedAt',
+          'updatedAt'
+        ]) &&
+        isValidId(proto.protocolId) &&
+        proto.protocolId.size() <= 80 &&
+        proto.surgeryDate is string && proto.surgeryDate.size() <= 20 &&
+        proto.checkedItemIds is list && proto.checkedItemIds.size() <= 80 &&
+        (
+          proto.checkedItemIds.size() == 0 ||
+          (proto.checkedItemIds[0] is string && proto.checkedItemIds[0].size() <= 80)
+        ) &&
+        proto.fieldValues is map &&
+        proto.deviationsNote is string && proto.deviationsNote.size() <= 2000 &&
+        proto.startedAt is int &&
+        proto.updatedAt is int;
+    }
+
+    function isValidIpdWardTreatmentList(listVal) {
+      return listVal is list &&
+        listVal.size() <= 40 &&
+        (
+          listVal.size() == 0 ||
+          (
+            listVal[0] is map &&
+            listVal[0].keys().hasAll([
+              'medicine',
+              'dosage',
+              'route',
+              'frequency',
+              'durationOrDates',
+              'notes'
+            ]) &&
+            listVal[0].keys().hasOnly([
+              'medicine',
+              'dosage',
+              'route',
+              'frequency',
+              'durationOrDates',
+              'notes'
+            ]) &&
+            listVal[0].medicine is string && listVal[0].medicine.size() >= 1 && listVal[0].medicine.size() <= 150 &&
+            listVal[0].dosage is string && listVal[0].dosage.size() <= 80 &&
+            listVal[0].route is string && listVal[0].route.size() <= 40 &&
+            listVal[0].frequency is string && listVal[0].frequency.size() <= 60 &&
+            listVal[0].durationOrDates is string && listVal[0].durationOrDates.size() <= 80 &&
+            listVal[0].notes is string && listVal[0].notes.size() <= 200
+          )
+        );
+    }
+
+    function isValidIpdDischargeSummaryMap(ds) {
+      return ds is map &&
+        ds.keys().hasAll([
+          'finalDiagnosis',
+          'procedurePerformed',
+          'chiefComplaintsAndHistory',
+          'hospitalCourse',
+          'keyInvestigations',
+          'conditionAtDischarge',
+          'dischargeMedications',
+          'dietAndActivityAdvice',
+          'redFlagWarnings',
+          'stentOrTubePlan',
+          'followUpPlan',
+          'authorizedBy',
+          'dischargeDate',
+          'generatedAt'
+        ]) &&
+        ds.keys().hasOnly([
+          'finalDiagnosis',
+          'procedurePerformed',
+          'chiefComplaintsAndHistory',
+          'examinationOnAdmission',
+          'hospitalCourse',
+          'keyInvestigations',
+          'otNotesSummary',
+          'treatmentGivenInWard',
+          'conditionAtDischarge',
+          'dischargeMedications',
+          'dietAndActivityAdvice',
+          'redFlagWarnings',
+          'stentOrTubePlan',
+          'followUpPlan',
+          'authorizedBy',
+          'dischargeDate',
+          'generatedAt'
+        ]) &&
+        ds.finalDiagnosis is string && ds.finalDiagnosis.size() <= 1000 &&
+        ds.procedurePerformed is string && ds.procedurePerformed.size() <= 1000 &&
+        ds.chiefComplaintsAndHistory is string && ds.chiefComplaintsAndHistory.size() <= 3000 &&
+        (!('examinationOnAdmission' in ds) || (ds.examinationOnAdmission is string && ds.examinationOnAdmission.size() <= 3000)) &&
+        ds.hospitalCourse is string && ds.hospitalCourse.size() <= 5000 &&
+        ds.keyInvestigations is string && ds.keyInvestigations.size() <= 4000 &&
+        (!('otNotesSummary' in ds) || (ds.otNotesSummary is string && ds.otNotesSummary.size() <= 6000)) &&
+        (!('treatmentGivenInWard' in ds) || isValidIpdWardTreatmentList(ds.treatmentGivenInWard)) &&
+        ds.conditionAtDischarge is string && ds.conditionAtDischarge.size() <= 500 &&
+        isValidPrescriptionsList(ds.dischargeMedications) &&
+        ds.dietAndActivityAdvice is string && ds.dietAndActivityAdvice.size() <= 2000 &&
+        ds.redFlagWarnings is string && ds.redFlagWarnings.size() <= 2000 &&
+        ds.stentOrTubePlan is string && ds.stentOrTubePlan.size() <= 1000 &&
+        ds.followUpPlan is string && ds.followUpPlan.size() <= 1000 &&
+        ds.authorizedBy is string && ds.authorizedBy.size() <= 150 &&
+        ds.dischargeDate is string && ds.dischargeDate.size() <= 20 &&
+        ds.generatedAt is int;
+    }
+
+    function isValidDoctorSurgicalProtocol(data) {
+      return data.keys().hasAll([
+          'id',
+          'doctorId',
+          'name',
+          'shortName',
+          'subtitle',
+          'expectedStayDays',
+          'urgentEscalationText',
+          'defaultDischargeAdvice',
+          'defaultReturnWarnings',
+          'sourceFileName',
+          'stages',
+          'isCustom',
+          'clientCreatedAt',
+          'clientUpdatedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'doctorId',
+          'name',
+          'shortName',
+          'subtitle',
+          'expectedStayDays',
+          'urgentEscalationText',
+          'defaultDischargeAdvice',
+          'defaultReturnWarnings',
+          'sourceFileName',
+          'pdfUrl',
+          'sourceAssets',
+          'stages',
+          'isCustom',
+          'clientCreatedAt',
+          'clientUpdatedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.id.size() <= 80 &&
+        isValidId(data.doctorId) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 140 &&
+        data.shortName is string && data.shortName.size() >= 1 && data.shortName.size() <= 48 &&
+        data.subtitle is string && data.subtitle.size() <= 220 &&
+        data.expectedStayDays is string && data.expectedStayDays.size() <= 80 &&
+        data.urgentEscalationText is string && data.urgentEscalationText.size() <= 1500 &&
+        data.defaultDischargeAdvice is string && data.defaultDischargeAdvice.size() <= 1500 &&
+        data.defaultReturnWarnings is string && data.defaultReturnWarnings.size() <= 1500 &&
+        data.sourceFileName is string && data.sourceFileName.size() <= 180 &&
+        (!('pdfUrl' in data) || (data.pdfUrl is string && data.pdfUrl.size() <= 300)) &&
+        (!('sourceAssets' in data) || (data.sourceAssets is list && data.sourceAssets.size() <= 10)) &&
+        data.stages is list && data.stages.size() >= 1 && data.stages.size() <= 24 &&
+        data.stages[0] is map &&
+        data.isCustom is bool && data.isCustom == true &&
+        data.clientCreatedAt is int &&
+        data.clientUpdatedAt is int &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidDoctorIpdPatient(data) {
+      return data.keys().hasAll([
+          'id',
+          'doctorId',
+          'doctorName',
+          'department',
+          'hospitalName',
+          'ipdNo',
+          'uhid',
+          'salutation',
+          'patientName',
+          'age',
+          'gender',
+          'phoneNumber',
+          'address',
+          'wardOrBed',
+          'admissionDate',
+          'surgeryDate',
+          'dischargeDate',
+          'status',
+          'admittingDiagnosis',
+          'clinicalSummary',
+          'comorbidities',
+          'allergies',
+          'attendingConsultant',
+          'dailyNotes',
+          'medications',
+          'medicationLogs',
+          'labTestsAndImaging',
+          'investigationRecords',
+          'linkedOpdConsultationId',
+          'clientCreatedAt',
+          'clientUpdatedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'doctorId',
+          'doctorName',
+          'department',
+          'hospitalName',
+          'ipdNo',
+          'uhid',
+          'salutation',
+          'patientName',
+          'age',
+          'gender',
+          'phoneNumber',
+          'address',
+          'wardOrBed',
+          'admissionDate',
+          'surgeryDate',
+          'dischargeDate',
+          'status',
+          'admittingDiagnosis',
+          'clinicalSummary',
+          'comorbidities',
+          'allergies',
+          'attendingConsultant',
+          'dailyNotes',
+          'medications',
+          'medicationLogs',
+          'labTestsAndImaging',
+          'investigationRecords',
+          'otNotes',
+          'otProcedures',
+          'surgicalProtocol',
+          'dischargeMedications',
+          'dischargeSummary',
+          'linkedOpdConsultationId',
+          'clientCreatedAt',
+          'clientUpdatedAt',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.doctorId is string && data.doctorId.size() >= 1 && data.doctorId.size() <= 128 && data.doctorId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.doctorId == request.auth.uid &&
+        data.doctorName is string && data.doctorName.size() >= 1 && data.doctorName.size() <= 100 &&
+        data.department is string && data.department.size() <= 100 &&
+        data.hospitalName is string && data.hospitalName.size() <= 150 &&
+        data.ipdNo is string && data.ipdNo.size() <= 60 &&
+        data.uhid is string && data.uhid.size() <= 60 &&
+        data.salutation is string && data.salutation.size() <= 20 &&
+        data.patientName is string && data.patientName.size() >= 1 && data.patientName.size() <= 120 &&
+        data.age is string && data.age.size() <= 20 &&
+        data.gender is string && data.gender.size() >= 1 && data.gender.size() <= 20 &&
+        data.phoneNumber is string && data.phoneNumber.size() <= 30 &&
+        data.address is string && data.address.size() <= 250 &&
+        data.wardOrBed is string && data.wardOrBed.size() <= 80 &&
+        data.admissionDate is string && data.admissionDate.size() >= 4 && data.admissionDate.size() <= 20 &&
+        data.surgeryDate is string && data.surgeryDate.size() <= 20 &&
+        data.dischargeDate is string && data.dischargeDate.size() <= 20 &&
+        data.status in ['admitted', 'discharged'] &&
+        data.admittingDiagnosis is string && data.admittingDiagnosis.size() <= 1000 &&
+        data.clinicalSummary is string && data.clinicalSummary.size() <= 3000 &&
+        data.comorbidities is string && data.comorbidities.size() <= 1000 &&
+        data.allergies is string && data.allergies.size() <= 500 &&
+        data.attendingConsultant is string && data.attendingConsultant.size() <= 120 &&
+        isValidIpdDailyNotesList(data.dailyNotes) &&
+        isValidIpdMedicationsList(data.medications) &&
+        isValidIpdMedicationLogsList(data.medicationLogs) &&
+        data.labTestsAndImaging is string && data.labTestsAndImaging.size() <= 4000 &&
+        isValidInvestigationRecordsList(data.investigationRecords) &&
+        (!('otNotes' in data) || isValidOtNotesMap(data.otNotes)) &&
+        (!('otProcedures' in data) || isValidIpdOtProceduresList(data.otProcedures)) &&
+        (!('surgicalProtocol' in data) || isValidIpdSurgicalProtocolMap(data.surgicalProtocol)) &&
+        (!('dischargeMedications' in data) || isValidPrescriptionsList(data.dischargeMedications)) &&
+        (!('dischargeSummary' in data) || isValidIpdDischargeSummaryMap(data.dischargeSummary)) &&
+        data.linkedOpdConsultationId is string && data.linkedOpdConsultationId.size() <= 128 &&
+        data.clientCreatedAt is int &&
+        data.clientUpdatedAt is int &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Collection: /doctors/{doctorId}
+    match /doctors/{doctorId} {
+      allow get: if isSignedIn() && isValidId(doctorId) && isOwner(doctorId);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(doctorId) &&
+        isOwner(doctorId) &&
+        isValidDoctorPublicProfile(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isValidDoctorPublicProfile(incoming()) &&
+        isVerifiedUser() &&
+        isValidId(doctorId) &&
+        isOwner(doctorId) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'fullName',
+          'qualification',
+          'speciality',
+          'registrationNo',
+          'hospitalName',
+          'department',
+          'updatedAt'
+        ]);
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(doctorId) &&
+        isOwner(doctorId) &&
+        existing().uid == request.auth.uid;
+
+      // Subcollection: /doctors/{doctorId}/private/{docId} (PII Split Collection)
+      match /private/{docId} {
+        allow get: if isSignedIn() &&
+          isValidId(doctorId) &&
+          isValidId(docId) &&
+          docId == 'info' &&
+          isOwner(doctorId) &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow create: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(docId) &&
+          docId == 'info' &&
+          isOwner(doctorId) &&
+          isValidDoctorPrivateProfile(incoming()) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          (
+            existsAfter(/databases/$(database)/documents/doctors/$(doctorId)) &&
+            getAfter(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid
+          );
+
+        allow update: if isValidDoctorPrivateProfile(incoming()) &&
+          isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(docId) &&
+          docId == 'info' &&
+          isOwner(doctorId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'email',
+            'phone',
+            'clinicAddress',
+            'updatedAt'
+          ]) &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(docId) &&
+          docId == 'info' &&
+          isOwner(doctorId) &&
+          existing().uid == request.auth.uid &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+      }
+
+      // Subcollection: /doctors/{doctorId}/consultations/{consultationId}
+      match /consultations/{consultationId} {
+        allow get: if isSignedIn() &&
+          isValidId(doctorId) &&
+          isValidId(consultationId) &&
+          isOwner(doctorId) &&
+          existing().doctorId == request.auth.uid &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        // Pillar 8: Secure List Queries (No get() inside allow list, strictly evaluates resource.data)
+        allow list: if isSignedIn() &&
+          isOwner(doctorId) &&
+          resource.data.doctorId == request.auth.uid;
+
+        allow create: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(consultationId) &&
+          isOwner(doctorId) &&
+          isValidDoctorConsultation(incoming()) &&
+          incoming().id == consultationId &&
+          incoming().doctorId == doctorId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow update: if isValidDoctorConsultation(incoming()) &&
+          isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(consultationId) &&
+          isOwner(doctorId) &&
+          incoming().id == existing().id &&
+          incoming().doctorId == existing().doctorId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'doctorName',
+            'department',
+            'opdNo',
+            'date',
+            'salutation',
+            'patientName',
+            'phoneNumber',
+            'gender',
+            'age',
+            'address',
+            'vitals',
+            'complaints',
+            'historyChecklist',
+            'pastMedication',
+            'ipss',
+            'systemicExamination',
+            'genitalExamination',
+            'perRectalExam',
+            'labTestsAndImaging',
+            'investigationRecords',
+            'diagnosis',
+            'testsRequested',
+            'testsRequestedByWhen',
+            'prescriptions',
+            'dietAndExercise',
+            'admissionAdvice',
+            'assessmentPlan',
+            'advice',
+            'nextVisit',
+            'referredTo',
+            'otNotes',
+            'clientCreatedAt',
+            'updatedAt'
+          ]) &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(consultationId) &&
+          isOwner(doctorId) &&
+          existing().doctorId == request.auth.uid &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+      }
+
+      // Subcollection: /doctors/{doctorId}/ipdPatients/{ipdPatientId}
+      match /ipdPatients/{ipdPatientId} {
+        allow get: if isSignedIn() &&
+          isValidId(doctorId) &&
+          isValidId(ipdPatientId) &&
+          isOwner(doctorId) &&
+          existing().doctorId == request.auth.uid &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        // Pillar 8: Secure List Queries (No get() inside allow list, strictly evaluates resource.data)
+        allow list: if isSignedIn() &&
+          isOwner(doctorId) &&
+          resource.data.doctorId == request.auth.uid;
+
+        allow create: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(ipdPatientId) &&
+          isOwner(doctorId) &&
+          isValidDoctorIpdPatient(incoming()) &&
+          incoming().id == ipdPatientId &&
+          incoming().doctorId == doctorId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow update: if isValidDoctorIpdPatient(incoming()) &&
+          isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(ipdPatientId) &&
+          isOwner(doctorId) &&
+          incoming().id == existing().id &&
+          incoming().doctorId == existing().doctorId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'doctorName',
+            'department',
+            'hospitalName',
+            'ipdNo',
+            'uhid',
+            'salutation',
+            'patientName',
+            'age',
+            'gender',
+            'phoneNumber',
+            'address',
+            'wardOrBed',
+            'admissionDate',
+            'surgeryDate',
+            'dischargeDate',
+            'status',
+            'admittingDiagnosis',
+            'clinicalSummary',
+            'comorbidities',
+            'allergies',
+            'attendingConsultant',
+            'dailyNotes',
+            'medications',
+            'medicationLogs',
+            'labTestsAndImaging',
+            'investigationRecords',
+            'otNotes',
+            'otProcedures',
+            'surgicalProtocol',
+            'dischargeMedications',
+            'dischargeSummary',
+            'linkedOpdConsultationId',
+            'clientCreatedAt',
+            'clientUpdatedAt',
+            'updatedAt'
+          ]) &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(ipdPatientId) &&
+          isOwner(doctorId) &&
+          existing().doctorId == request.auth.uid &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+      }
+
+      // Subcollection: /doctors/{doctorId}/surgicalProtocols/{protocolId}
+      match /surgicalProtocols/{protocolId} {
+        allow get: if isSignedIn() &&
+          isValidId(doctorId) &&
+          isValidId(protocolId) &&
+          isOwner(doctorId) &&
+          existing().doctorId == request.auth.uid &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        // Pillar 8: Secure List Queries (No get() inside allow list, strictly evaluates resource.data)
+        allow list: if isSignedIn() &&
+          isOwner(doctorId) &&
+          resource.data.doctorId == request.auth.uid;
+
+        allow create: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(protocolId) &&
+          isOwner(doctorId) &&
+          isValidDoctorSurgicalProtocol(incoming()) &&
+          incoming().id == protocolId &&
+          incoming().doctorId == doctorId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow update: if isValidDoctorSurgicalProtocol(incoming()) &&
+          isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(protocolId) &&
+          isOwner(doctorId) &&
+          incoming().id == existing().id &&
+          incoming().doctorId == existing().doctorId &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name',
+            'shortName',
+            'subtitle',
+            'expectedStayDays',
+            'urgentEscalationText',
+            'defaultDischargeAdvice',
+            'defaultReturnWarnings',
+            'sourceFileName',
+            'pdfUrl',
+            'sourceAssets',
+            'stages',
+            'isCustom',
+            'clientCreatedAt',
+            'clientUpdatedAt',
+            'updatedAt'
+          ]) &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(doctorId) &&
+          isValidId(protocolId) &&
+          isOwner(doctorId) &&
+          existing().doctorId == request.auth.uid &&
+          get(/databases/$(database)/documents/doctors/$(doctorId)).data.uid == request.auth.uid;
+      }
+    }
+  }
+}
